@@ -2,7 +2,7 @@
 
 This is a basic menubar app that allows you to control your Nest thermostats.
 
-To use this app, you first need to create a Nest developer account and set up authentication between this app and the Nest web site. Follow the [instructions in the Python-nest README](https://github.com/jkoelker/python-nest/blob/master/README.rst).
+To use this app, you first need to set up Google Nest Device Access using the Smart Device Management API (this involves paying a one-time $5 fee). Follow the [instructions in the python-google-nest README](https://github.com/axlan/python-nest/blob/master/README.md).
 
 After launch, you can change the mode and temperature setting of each Nest thermostat:
 
@@ -14,8 +14,8 @@ If you select the mode from the menu, you will be prompted to select the mode fo
 
 ## Requirements
 
-* Python == 3.7
-* [python-nest](https://github.com/jkoelker/python-nest) >= 4.1.0
+* Python == 3.9
+* [python-google-nest](https://github.com/axlan/python-nest) >= 5.1.1
 * [rumps](https://github.com/jaredks/rumps) >= 0.3.0
 * [py2app](https://py2app.readthedocs.io) >= 0.19
 

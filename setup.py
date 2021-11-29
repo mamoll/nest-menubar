@@ -30,5 +30,5 @@ setup(
     data_files=DATA_FILES,
     options={'py2app': OPTIONS},
     setup_requires=['py2app'],
-    install_requires=['python-nest>=4.1.0', 'rumps>=0.3.0']
+    install_requires=['python-google-nest>=5.1.1', 'rumps>=0.3.0']
 )
