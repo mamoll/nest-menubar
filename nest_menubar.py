@@ -46,9 +46,7 @@ import rumps
 class ThermostatWrapper(object):
     def __init__(self, thermostat):
         self.thermostat_ = thermostat
-        self.prev_target_ = thermostat.traits["ThermostatTemperatureSetpoint"][
-            "heatCelsius"
-        ]
+        self.prev_target_ = self.set_point
         self.target_ = self.prev_target_
         self.current_ = thermostat.traits["Temperature"]["ambientTemperatureCelsius"]
         self.prev_mode_ = thermostat.traits["ThermostatMode"]["mode"]
@@ -91,6 +89,32 @@ class ThermostatWrapper(object):
         return f"Current: {self._label(self.current_)}"
 
     @property
+    def set_point(self):
+        sp = self.thermostat_.traits["ThermostatTemperatureSetpoint"]
+        if "heatCelsius" in sp:
+            return sp["heatCelsius"]
+        else:
+            return sp["coolCelsius"]
+
+    @set_point.setter
+    def set_point(self, target):
+        if self.mode_ == "HEAT":
+            self.thermostat_.send_cmd(
+                "ThermostatTemperatureSetpoint.SetHeat",
+                {"heatCelsius": target},
+            )
+        elif self.mode_ == "COOL":
+            self.thermostat_.send_cmd(
+                "ThermostatTemperatureSetpoint.SetCool",
+                {"coolCelsius": self.target_},
+            )
+        elif self.mode_ == "HEATCOOL":
+            self.thermostat_.send_cmd(
+                "ThermostatTemperatureSetpoint.SetRange",
+                {"heatCelsius": target[0], "coolCelsius": target[1]},
+            )
+
+    @property
     def mode(self):
         return self.mode_
 
@@ -117,25 +141,9 @@ class ThermostatWrapper(object):
             self.mode_ = self.thermostat_.traits["ThermostatMode"]["mode"]
         if self.prev_target_ != self.target_:
             self.prev_target_ = self.target_
-            if self.mode_ == "HEAT":
-                self.thermostat_.send_cmd(
-                    "ThermostatTemperatureSetpoint.SetHeat",
-                    {"heatCelsius": self.target_},
-                )
-            elif self.mode_ == "COOL":
-                self.thermostat_.send_cmd(
-                    "ThermostatTemperatureSetpoint.SetCool",
-                    {"coolCelsius": self.target_},
-                )
-            elif self.mode_ == "HEATCOOL":
-                self.thermostat_.send_cmd(
-                    "ThermostatTemperatureSetpoint.SetRange",
-                    {"heatCelsius": self.target_[0], "coolCelsius": self.target_[1]},
-                )
+            self.set_point = self.target_
         else:
-            self.target_ = self.thermostat_.traits["ThermostatTemperatureSetpoint"][
-                "heatCelsius"
-            ]
+            self.target_ = self.set_point
         self.current_ = self.thermostat_.traits["Temperature"][
             "ambientTemperatureCelsius"
         ]
