@@ -38,10 +38,10 @@
 
 import os
 from functools import partial
+import logging
 import nest
 import nest.helpers
 import rumps
-
 
 class ThermostatWrapper(object):
     def __init__(self, thermostat):
@@ -52,6 +52,9 @@ class ThermostatWrapper(object):
         self.prev_mode_ = thermostat.traits["ThermostatMode"]["mode"]
         self.mode_ = self.prev_mode_
         self.name_ = thermostat.where
+        customName = thermostat.traits['Info']['customName']
+        if customName:
+            self.name_ += f' ({customName})'
         self.offset_ = 2
         self.range_ = (9, 32)
 
@@ -106,7 +109,7 @@ class ThermostatWrapper(object):
         elif self.mode_ == "COOL":
             self.thermostat_.send_cmd(
                 "ThermostatTemperatureSetpoint.SetCool",
-                {"coolCelsius": self.target_},
+                {"coolCelsius": target},
             )
         elif self.mode_ == "HEATCOOL":
             self.thermostat_.send_cmd(
@@ -135,15 +138,20 @@ class ThermostatWrapper(object):
 
     def update(self):
         if self.prev_mode_ != self.mode_:
+            # user changed mode through UI
             self.prev_mode_ = self.mode_
             self.thermostat_.send_cmd("ThermostatMode.SetMode", {"mode": self.mode_})
         else:
+            # user possibly changed mode elsewhere
             self.mode_ = self.thermostat_.traits["ThermostatMode"]["mode"]
         if self.prev_target_ != self.target_:
+            # user changed target temp. through UI
             self.prev_target_ = self.target_
             self.set_point = self.target_
         else:
+            # user possibly changed target temp. elsewhere
             self.target_ = self.set_point
+        # get current temp.
         self.current_ = self.thermostat_.traits["Temperature"][
             "ambientTemperatureCelsius"
         ]
@@ -209,6 +217,8 @@ class NestBarApp(rumps.App):
             self.menu.add(rumps.separator)
         self.update(None)
 
+    # throttle thermostat updates to once every 10 seconds, so that we are not hammering
+    # Google's servers as we are moving the temperature slider around.
     @rumps.timer(10)
     def update(self, _):
         for i, thermostat in enumerate(self.thermostats):
@@ -240,4 +250,6 @@ class NestBarApp(rumps.App):
 
 
 if __name__ == "__main__":
+    #logging.getLogger("nest").setLevel(logging.DEBUG)
+    #logging.getLogger("nest").addHandler(logging.FileHandler('nest.log'))
     NestBarApp().run()
